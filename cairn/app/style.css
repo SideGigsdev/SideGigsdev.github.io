@@ -1,0 +1,212 @@
+/* Cairn — app styles.
+ * Same derived Solarized tokens as the Mac app: the inks sit at 7:1 and the
+ * accents at 4.5:1 as text, so nothing here is a colour anyone picked by eye.
+ */
+
+:root {
+  --ground:#FDF6E3; --surface:#FFFBF0; --sunk:#F2ECD8;
+  --rule:#E3DCC6; --rule-hi:#D3C9A8; --empty:#E7DFC6;
+  --ink:#073642; --body:#4A6470; --muted:#5F7480; --faint:#DDD5BC;
+  --shadow:rgba(158,147,119,.18);
+
+  --cyan:#1B6E67;    --cyan-fill:#2AA198;
+  --blue:#1F6A9E;    --blue-fill:#268BD2;
+  --violet:#565AA8;  --violet-fill:#6C71C4;
+  --magenta:#A32763; --magenta-fill:#D33682;
+  --green:#5F6E00;   --green-fill:#859900;
+  --yellow:#7C5E00;  --yellow-fill:#B58900;
+  --orange:#B7431A;  --orange-fill:#CB4B16;
+  --red:#B32724;     --red-fill:#DC322F;
+
+  --r-chip:8px; --r-ctl:12px; --r-tile:16px; --r-card:20px;
+  --hit:44px;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --ground:#002B36; --surface:#073642; --sunk:#05303C;
+    --rule:#0D4655; --rule-hi:#14586A; --empty:#0A404E;
+    --ink:#EEE8D5; --body:#A3B1B1; --muted:#8A9A9C; --faint:#0F5063;
+    --shadow:rgba(0,0,0,.36);
+    --cyan:#49C2B8; --blue:#54AEE8; --violet:#8E92DC; --magenta:#E964A6;
+    --green:#A6BC1F; --yellow:#D9AF2B; --orange:#E8743C; --red:#EF5B58;
+  }
+}
+:root[data-theme="dark"] {
+  --ground:#002B36; --surface:#073642; --sunk:#05303C;
+  --rule:#0D4655; --rule-hi:#14586A; --empty:#0A404E;
+  --ink:#EEE8D5; --body:#A3B1B1; --muted:#8A9A9C; --faint:#0F5063;
+  --shadow:rgba(0,0,0,.36);
+  --cyan:#49C2B8; --blue:#54AEE8; --violet:#8E92DC; --magenta:#E964A6;
+  --green:#A6BC1F; --yellow:#D9AF2B; --orange:#E8743C; --red:#EF5B58;
+}
+
+*,*::before,*::after{box-sizing:border-box}
+
+body{
+  margin:0;background:var(--ground);color:var(--body);
+  font-family:"IBM Plex Sans",system-ui,-apple-system,"Segoe UI",sans-serif;
+  font-size:16px;line-height:1.55;-webkit-font-smoothing:antialiased;
+  padding-bottom:5.5rem;
+}
+.mono,h1,h2,h3,.num{font-family:"IBM Plex Mono",ui-monospace,Menlo,monospace}
+h1,h2,h3{color:var(--ink);margin:0;letter-spacing:-.025em;text-wrap:balance}
+p{margin:0}
+button,input,select,textarea{font:inherit;color:inherit}
+button{cursor:pointer;background:none;border:0;padding:0}
+:focus-visible{outline:2px solid var(--cyan);outline-offset:2px;border-radius:4px}
+.num{font-variant-numeric:tabular-nums}
+
+.wrap{max-width:720px;margin:0 auto;padding:0 1rem}
+.hidden{display:none !important}
+
+/* ---------------- top bar ---------------- */
+.topbar{
+  position:sticky;top:0;z-index:20;background:var(--ground);
+  border-bottom:1px solid var(--rule)}
+.topbar-in{display:flex;align-items:center;justify-content:space-between;gap:.75rem;padding:.7rem 0}
+.brand{display:flex;align-items:center;gap:.5rem;font-family:"IBM Plex Mono",monospace;
+       font-weight:600;color:var(--ink);letter-spacing:-.02em}
+.icon-btn{width:var(--hit);height:38px;display:grid;place-items:center;color:var(--muted);border-radius:var(--r-chip)}
+.icon-btn:hover{color:var(--ink);background:var(--sunk)}
+
+/* ---------------- cards ---------------- */
+.card{background:var(--surface);border:1px solid var(--rule);border-radius:var(--r-card);
+      padding:1rem 1.05rem;box-shadow:0 8px 22px -18px var(--shadow)}
+.card + .card{margin-top:.85rem}
+.section-label{font-family:"IBM Plex Mono",monospace;font-size:.7rem;font-weight:600;
+               letter-spacing:.12em;text-transform:uppercase;color:var(--muted)}
+.row-between{display:flex;align-items:center;justify-content:space-between;gap:.75rem}
+
+/* ---------------- brief ---------------- */
+.brief-head{padding:1.4rem 0 .5rem}
+.greet{font-size:1.55rem;font-weight:600;line-height:1.1}
+.date{font-size:.9rem;color:var(--muted);margin-top:.2rem}
+.lead{margin-top:.7rem;color:var(--ink);font-size:1.02rem;line-height:1.45}
+.ring-row{display:flex;align-items:center;gap:1rem;margin-top:1rem}
+.ring{flex:0 0 auto}
+.ring text{font-family:"IBM Plex Mono",monospace;font-variant-numeric:tabular-nums}
+
+.banner{border-left:3px solid var(--green);padding:.6rem 0 .6rem .9rem;margin-top:.9rem;
+        font-size:.95rem;color:var(--ink)}
+
+/* ---------------- habit rows ---------------- */
+.hrow{display:flex;gap:.8rem;align-items:flex-start;padding:.55rem 0}
+.hrow + .hrow{border-top:1px solid var(--rule)}
+.tick{
+  flex:0 0 auto;width:var(--hit);height:var(--hit);display:grid;place-items:center;
+  margin:-.35rem 0 0 -.35rem;border-radius:50%}
+.tick svg{display:block}
+.hmain{flex:1;min-width:0}
+.hname{display:flex;align-items:center;gap:.4rem;color:var(--ink);font-weight:600;font-size:1rem}
+.hname .ic{font-size:.95rem;line-height:1}
+.hname.done{color:var(--muted);text-decoration:line-through;text-decoration-color:var(--faint)}
+.hsub{font-size:.85rem;color:var(--muted);margin-top:.1rem;
+      overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.hmeta{display:flex;align-items:center;gap:.5rem;margin-top:.35rem}
+.trail{display:flex;gap:2px}
+.trail i{width:5px;height:12px;border-radius:2px;background:var(--empty);display:block}
+.hright{flex:0 0 auto;text-align:right;min-width:3rem}
+.streak{font-size:1.05rem;font-weight:600;line-height:1.1}
+.streak-u{font-size:.68rem;color:var(--muted);text-transform:uppercase;letter-spacing:.06em}
+
+/* draggable count track — 44pt hit region even though the bar is 12px */
+.track{margin-top:.4rem;height:var(--hit);display:flex;align-items:center;cursor:ew-resize;
+       touch-action:none;user-select:none;margin-bottom:-.6rem}
+.track-in{display:flex;gap:3px;width:100%;height:12px}
+.track-in b{flex:1;background:var(--empty);border-radius:3px;display:block}
+
+.pill{display:inline-flex;align-items:center;gap:.25rem;font-size:.72rem;padding:.15rem .45rem;
+      border-radius:999px;background:var(--sunk);color:var(--muted);white-space:nowrap}
+
+/* ---------------- tasks ---------------- */
+.trow{display:flex;gap:.7rem;align-items:flex-start;padding:.4rem 0}
+.trow + .trow{border-top:1px solid var(--rule)}
+.tbox{flex:0 0 auto;width:var(--hit);height:var(--hit);display:grid;place-items:center;
+      margin:-.5rem 0 -.5rem -.5rem}
+.tbox span{width:17px;height:17px;border-radius:50%;border:2px solid var(--rule-hi);display:block}
+.tbox span.on{background:var(--cyan);border-color:var(--cyan)}
+.ttitle{flex:1;color:var(--ink);font-size:.96rem;min-width:0}
+.ttitle.done{color:var(--muted);text-decoration:line-through}
+.tdue{flex:0 0 auto;font-size:.75rem;color:var(--muted);font-family:"IBM Plex Mono",monospace}
+.tdue.late{color:var(--orange)}
+
+/* ---------------- capture ---------------- */
+.capture{display:flex;gap:.5rem;align-items:center;margin-top:.6rem}
+.capture input{flex:1;min-width:0;padding:.7rem .8rem;border-radius:var(--r-ctl);
+               border:1px solid var(--rule-hi);background:var(--ground);color:var(--ink)}
+.btn{font-family:"IBM Plex Mono",monospace;font-weight:600;font-size:.88rem;
+     padding:.68rem 1rem;border-radius:var(--r-ctl);background:var(--cyan);color:#FFFBF0;
+     white-space:nowrap}
+.btn.ghost{background:var(--sunk);color:var(--ink)}
+.btn.small{padding:.42rem .7rem;font-size:.8rem}
+.btn:disabled{opacity:.5;cursor:default}
+.parse{margin-top:.55rem;font-size:.85rem;color:var(--muted);
+       background:var(--sunk);border-radius:var(--r-ctl);padding:.55rem .7rem}
+.parse b{color:var(--ink)}
+
+/* ---------------- proposals ---------------- */
+.prop{border-left:3px solid var(--orange);padding:.15rem 0 .15rem .9rem;margin-top:1rem}
+.prop:first-of-type{margin-top:.4rem}
+.prop h3{font-size:.98rem;font-weight:600;margin-bottom:.25rem}
+.prop p{font-size:.92rem}
+.prop .why{margin-top:.35rem;font-size:.79rem;color:var(--muted);font-style:italic}
+
+/* ---------------- scale (SRBAI) ---------------- */
+.scale{display:flex;gap:.35rem;margin-top:.6rem}
+.scale button{flex:1;height:var(--hit);border-radius:var(--r-ctl);background:var(--sunk);
+              color:var(--ink);font-family:"IBM Plex Mono",monospace;font-weight:600}
+.scale button[aria-pressed="true"]{background:var(--cyan);color:#FFFBF0}
+.scale-ends{display:flex;justify-content:space-between;font-size:.72rem;color:var(--muted);margin-top:.3rem}
+
+/* ---------------- heat ---------------- */
+.heat{display:flex;gap:2.5px;overflow-x:auto;padding-bottom:.2rem}
+.heat .col{display:flex;flex-direction:column;gap:2.5px}
+.heat i{width:10px;height:10px;border-radius:3px;background:var(--empty);display:block}
+
+/* ---------------- tabs ---------------- */
+.tabs{position:fixed;bottom:0;left:0;right:0;z-index:30;background:var(--ground);
+      border-top:1px solid var(--rule);padding-bottom:env(safe-area-inset-bottom)}
+.tabs-in{display:flex;max-width:720px;margin:0 auto}
+.tab{flex:1;padding:.55rem .2rem .6rem;display:flex;flex-direction:column;align-items:center;gap:.15rem;
+     color:var(--muted);font-size:.68rem;font-family:"IBM Plex Mono",monospace;letter-spacing:.04em}
+.tab[aria-selected="true"]{color:var(--cyan)}
+.tab svg{display:block}
+
+/* ---------------- sheet ---------------- */
+.sheet-bg{position:fixed;inset:0;background:rgba(0,0,0,.32);z-index:40;
+          display:grid;place-items:end center;padding:0}
+.sheet{background:var(--ground);width:100%;max-width:720px;max-height:88vh;overflow-y:auto;
+       border-radius:var(--r-card) var(--r-card) 0 0;padding:1.1rem 1rem 2rem;
+       border:1px solid var(--rule)}
+@media (min-width:700px){
+  .sheet-bg{place-items:center}
+  .sheet{border-radius:var(--r-card);max-height:82vh}
+}
+.sheet h2{font-size:1.15rem;margin-bottom:.15rem}
+.field{margin-top:.9rem}
+.field label{display:block;font-size:.78rem;color:var(--muted);margin-bottom:.25rem}
+.field input,.field textarea,.field select{
+  width:100%;padding:.6rem .7rem;border-radius:var(--r-ctl);
+  border:1px solid var(--rule-hi);background:var(--surface);color:var(--ink)}
+.field .hint{font-size:.78rem;color:var(--muted);margin-top:.3rem;line-height:1.45}
+.chips{display:flex;flex-wrap:wrap;gap:.35rem;margin-top:.3rem}
+.chips button{padding:.4rem .6rem;border-radius:var(--r-chip);background:var(--sunk);
+              color:var(--ink);font-size:.85rem;min-height:36px}
+.chips button[aria-pressed="true"]{background:var(--cyan);color:#FFFBF0}
+.swatches{display:flex;gap:.4rem;flex-wrap:wrap;margin-top:.3rem}
+.swatches button{width:28px;height:28px;border-radius:50%}
+.swatches button[aria-pressed="true"]{box-shadow:0 0 0 2px var(--ground),0 0 0 4px var(--ink)}
+.sheet-actions{display:flex;gap:.5rem;margin-top:1.2rem}
+.sheet-actions .btn{flex:1;text-align:center}
+
+.empty{text-align:center;padding:1.6rem 1rem;color:var(--muted);font-size:.95rem}
+.note{font-size:.82rem;color:var(--muted);line-height:1.5}
+.toast{position:fixed;left:50%;bottom:5.2rem;transform:translateX(-50%);z-index:50;
+       background:var(--ink);color:var(--ground);padding:.6rem .9rem;border-radius:999px;
+       font-size:.87rem;box-shadow:0 8px 24px -12px rgba(0,0,0,.5);max-width:90vw}
+
+@media (prefers-reduced-motion:no-preference){
+  .tick svg circle,.tick svg path{transition:all .18s ease}
+  .track-in b{transition:background .12s ease}
+}

@@ -1,0 +1,430 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Cairn — the secretary that remembers</title>
+<meta name="description" content="I kept planning my week in ChatGPT and by Thursday it had forgotten all of it. So I built the thing that remembers.">
+<meta property="og:title" content="Cairn — the secretary that remembers">
+<meta property="og:description" content="I kept planning my week in ChatGPT and by Thursday it had forgotten all of it. So I built the thing that remembers.">
+<meta property="og:type" content="website">
+<meta name="theme-color" content="#FDF6E3" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#002B36" media="(prefers-color-scheme: dark)">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='7' fill='%23FDF6E3'/><rect x='6' y='22' width='20' height='5' rx='2.5' fill='%231B6E67'/><rect x='9' y='15' width='14' height='5' rx='2.5' fill='%231F7A73'/><rect x='12' y='8' width='8' height='5' rx='2.5' fill='%232AA198'/></svg>">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=Literata:opsz,wght@7..72,400;7..72,500;7..72,600;7..72,700&display=swap">
+
+<style>
+  /* ------------------------------------------------------------------
+     COLOUR — Solarized. Schoonover built it around fixed CIELAB
+     relationships between its members, which is why the accents sit
+     together without one jumping out. The inks below aren't picked by
+     eye: each is the softest value that still clears its WCAG ratio on
+     this paper — 7:1 for body text, 4.6:1 for secondary, 4.5:1 for the
+     accent when it's used as text. Same derivation as the Mac app.
+
+     TYPE — Literata for anything you read. TypeTogether drew it for
+     Google Play Books off screen-reading research, and it has a real
+     optical-size axis, so the small sizes aren't the big ones shrunk.
+     IBM Plex Mono for labels, counts and anything that changes.
+     One rule: prose is Literata, machinery is Plex Mono.
+     ------------------------------------------------------------------ */
+  :root {
+    --paper:#FDF6E3; --card:#FFFBF0; --sunk:#F3EDD9;
+    --rule:#E5DEC9; --rule-2:#D3C9A8;
+    --ink:#062E38; --text:#48626E; --dim:#5F7480;
+    --accent:#1B6E67; --accent-lit:#2AA198;
+    --warn:#B7431A; --good:#5F6E00;
+    --shadow:rgba(150,138,108,.20);
+
+    --measure:36rem;
+    --f-xs:.78rem; --f-sm:.9rem; --f-base:1.09rem; --f-lg:1.3rem;
+    --f-xl:1.75rem; --f-3xl:3.1rem;
+  }
+  @media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+    --paper:#002B36; --card:#073642; --sunk:#05303C;
+    --rule:#0D4655; --rule-2:#165F73;
+    --ink:#F2ECDA; --text:#A7B4B4; --dim:#8A9A9C;
+    --accent:#49C2B8; --accent-lit:#2AA198;
+    --warn:#E8743C; --good:#A6BC1F;
+    --shadow:rgba(0,0,0,.4);
+  }}
+  :root[data-theme="dark"]{
+    --paper:#002B36; --card:#073642; --sunk:#05303C;
+    --rule:#0D4655; --rule-2:#165F73;
+    --ink:#F2ECDA; --text:#A7B4B4; --dim:#8A9A9C;
+    --accent:#49C2B8; --accent-lit:#2AA198;
+    --warn:#E8743C; --good:#A6BC1F;
+    --shadow:rgba(0,0,0,.4);
+  }
+
+  *,*::before,*::after{box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  @media (prefers-reduced-motion:reduce){html{scroll-behavior:auto}}
+
+  body{
+    margin:0; background:var(--paper); color:var(--text);
+    font-family:Literata,Georgia,"Times New Roman",serif;
+    font-size:var(--f-base); line-height:1.62;
+    font-optical-sizing:auto; -webkit-font-smoothing:antialiased;
+  }
+  .wrap{max-width:64rem;margin:0 auto;padding:0 clamp(1.15rem,4.5vw,2.6rem)}
+
+  h1,h2,h3{color:var(--ink);margin:0;text-wrap:balance;letter-spacing:-.018em}
+  h1{font-size:clamp(1.95rem,4.6vw,var(--f-3xl));line-height:1.08;font-weight:700;max-width:17ch}
+  h2{font-size:clamp(1.5rem,3.2vw,var(--f-xl));line-height:1.18;font-weight:600}
+  h3{font-size:var(--f-base);font-weight:600;line-height:1.35}
+  p{margin:0}
+  a{color:var(--accent);text-underline-offset:3px;text-decoration-thickness:1px}
+  a:focus-visible,button:focus-visible,input:focus-visible,select:focus-visible{
+    outline:2px solid var(--accent);outline-offset:3px;border-radius:4px}
+
+  .mono{font-family:"IBM Plex Mono",ui-monospace,Menlo,monospace}
+  .eyebrow{font-family:"IBM Plex Mono",ui-monospace,monospace;
+    font-size:var(--f-xs);font-weight:500;letter-spacing:.15em;
+    text-transform:uppercase;color:var(--accent);margin:0}
+  .lede{font-size:var(--f-lg);line-height:1.5;margin-top:1rem;max-width:var(--measure)}
+  .lede b,strong{color:var(--ink);font-weight:600}
+
+  nav{border-bottom:1px solid var(--rule);position:sticky;top:0;z-index:10;
+      background:color-mix(in srgb,var(--paper) 93%,transparent);
+      backdrop-filter:saturate(150%) blur(10px)}
+  .nav-in{display:flex;align-items:center;justify-content:space-between;gap:1rem;padding:.8rem 0}
+  .brand{display:flex;align-items:center;gap:.55rem;font-family:"IBM Plex Mono",monospace;
+         font-weight:600;font-size:.98rem;color:var(--ink);text-decoration:none;letter-spacing:-.02em}
+  .nav-link{font-family:"IBM Plex Mono",monospace;font-size:var(--f-sm);
+            text-decoration:none;color:var(--dim)}
+  .nav-link:hover{color:var(--ink)}
+
+  header.hero{padding:clamp(3rem,8vw,5.5rem) 0 clamp(2.5rem,6vw,4rem)}
+  .hero-grid{display:grid;gap:clamp(2.2rem,5vw,3.5rem);align-items:start}
+  @media (min-width:920px){.hero-grid{grid-template-columns:1.02fr .98fr}}
+
+  .cta-row{display:flex;flex-wrap:wrap;gap:.6rem;margin-top:1.9rem}
+  .cta{font-family:"IBM Plex Mono",monospace;font-weight:600;font-size:var(--f-sm);
+       padding:.8rem 1.35rem;border-radius:10px;background:var(--accent);color:#FFFBF0;
+       text-decoration:none;letter-spacing:-.01em;display:inline-block;
+       box-shadow:0 6px 16px -10px var(--accent)}
+  .cta:hover{filter:brightness(1.09)}
+  .cta.ghost{background:transparent;color:var(--ink);box-shadow:inset 0 0 0 1px var(--rule-2)}
+  .small-print{font-size:var(--f-sm);color:var(--dim);margin-top:.85rem;line-height:1.5}
+
+  .brief{background:var(--card);border:1px solid var(--rule);border-radius:15px;
+         box-shadow:0 20px 42px -26px var(--shadow);overflow:hidden}
+  .brief-bar{display:flex;align-items:center;gap:.4rem;padding:.6rem .9rem;
+             border-bottom:1px solid var(--rule);background:var(--sunk)}
+  .dot{width:8px;height:8px;border-radius:50%;background:var(--rule-2)}
+  .brief-title{font-family:"IBM Plex Mono",monospace;font-size:.68rem;letter-spacing:.11em;
+               text-transform:uppercase;color:var(--dim);margin-left:.4rem}
+  .brief-body{padding:1.15rem 1.2rem 1.3rem}
+  .brief-lead{color:var(--ink);font-size:1rem;line-height:1.5;margin-bottom:1rem}
+  .line{display:flex;align-items:flex-start;gap:.65rem;padding:.45rem 0;
+        border-top:1px solid var(--rule);font-size:.95rem}
+  .line:first-of-type{border-top:0}
+  .tick{width:15px;height:15px;border-radius:50%;border:1.8px solid var(--rule-2);
+        flex:0 0 auto;margin-top:.24rem}
+  .tick.on{background:var(--accent-lit);border-color:var(--accent-lit)}
+  .line .what{color:var(--ink);flex:1}
+  .line .when{font-family:"IBM Plex Mono",monospace;font-size:.73rem;color:var(--dim);
+              white-space:nowrap;margin-top:.22rem;font-variant-numeric:tabular-nums}
+  .line .when.late{color:var(--warn)}
+  .brief-note{margin-top:1.05rem;padding:.8rem .9rem;border-radius:10px;
+              background:color-mix(in srgb,var(--accent-lit) 11%,transparent);
+              font-size:.93rem;line-height:1.52;color:var(--ink)}
+  .brief-note .mono{font-size:.65rem;letter-spacing:.12em;text-transform:uppercase;
+                    color:var(--accent);display:block;margin-bottom:.3rem;font-weight:500}
+  .mock-tag{font-family:"IBM Plex Mono",monospace;font-size:.66rem;letter-spacing:.09em;
+            text-transform:uppercase;color:var(--dim);margin-top:.75rem;text-align:right}
+
+  section{padding:clamp(3rem,6.5vw,4.75rem) 0;border-top:1px solid var(--rule)}
+
+  .three{display:grid;gap:1.9rem;margin-top:2.4rem}
+  @media (min-width:840px){.three{grid-template-columns:repeat(3,1fr);gap:2.4rem}}
+  .three h3{margin-bottom:.45rem}
+  .three p{font-size:var(--f-sm);line-height:1.58}
+  .three .n{font-family:"IBM Plex Mono",monospace;font-size:.68rem;letter-spacing:.12em;
+            color:var(--accent);display:block;margin-bottom:.6rem}
+
+  .steps{margin-top:2.2rem;display:grid;gap:1.5rem}
+  @media (min-width:760px){.steps{grid-template-columns:repeat(2,1fr);gap:1.7rem 2.8rem}}
+  .step{display:grid;grid-template-columns:1.85rem 1fr;gap:0 1rem;align-items:start}
+  .step .n{font-family:"IBM Plex Mono",monospace;font-size:.75rem;font-weight:600;
+           color:var(--accent);padding-top:.22rem;font-variant-numeric:tabular-nums}
+  .step p{font-size:var(--f-sm);line-height:1.58;margin-top:.2rem}
+
+  .refuse{margin:2rem 0 0;padding:0;list-style:none;max-width:var(--measure)}
+  .refuse li{padding:.9rem 0;border-bottom:1px solid var(--rule);font-size:var(--f-sm);line-height:1.58}
+  .refuse li:first-child{border-top:1px solid var(--rule)}
+  .refuse b{color:var(--ink);font-weight:600;display:block;margin-bottom:.15rem;font-size:var(--f-base)}
+
+  .split{display:grid;gap:1.8rem;margin-top:2.2rem}
+  @media (min-width:760px){.split{grid-template-columns:1fr 1fr;gap:2.6rem}}
+  .split .mono{font-size:.68rem;letter-spacing:.12em;text-transform:uppercase;
+               display:block;margin-bottom:.8rem;font-weight:500}
+  .split ul{margin:0;padding-left:1.05rem;font-size:var(--f-sm);line-height:1.6}
+  .split li{margin-bottom:.45rem}
+  .live .mono{color:var(--good)} .soon .mono{color:var(--dim)}
+
+  .ask{background:var(--card);border:1px solid var(--rule);border-radius:16px;
+       padding:clamp(1.5rem,4vw,2.4rem);margin-top:2rem;
+       box-shadow:0 20px 42px -30px var(--shadow)}
+  .ask p{max-width:var(--measure)}
+  .signup{margin-top:1.6rem;max-width:32rem}
+  .field-row{display:flex;flex-wrap:wrap;gap:.55rem}
+  input[type=email],select,input[type=text]{
+    font:inherit;font-family:Literata,Georgia,serif;font-size:var(--f-sm);
+    padding:.75rem .85rem;border-radius:9px;
+    border:1px solid var(--rule-2);background:var(--paper);color:var(--ink);min-width:0}
+  input[type=email]{flex:1 1 14rem}
+  select,input[type=text]{width:100%;margin-top:.55rem}
+  button{font:inherit;font-family:"IBM Plex Mono",monospace;font-weight:600;font-size:var(--f-sm);
+    padding:.75rem 1.25rem;border-radius:9px;border:0;cursor:pointer;
+    background:var(--accent);color:#FFFBF0;letter-spacing:-.01em}
+  button:hover{filter:brightness(1.09)}
+  .status{margin-top:.85rem;font-size:var(--f-sm);color:var(--good);display:none}
+  .status.err{color:var(--warn)}
+  .status.show{display:block}
+
+  footer{border-top:1px solid var(--rule);padding:2.4rem 0 3.2rem;
+         font-size:var(--f-sm);color:var(--dim)}
+  .foot-in{display:flex;flex-wrap:wrap;gap:.6rem 1.6rem;justify-content:space-between}
+</style>
+</head>
+<body>
+
+<nav>
+  <div class="wrap nav-in">
+    <a class="brand" href="#top">
+      <svg width="21" height="21" viewBox="0 0 32 32" aria-hidden="true">
+        <rect x="5" y="22" width="22" height="5" rx="2.5" fill="var(--accent)"></rect>
+        <rect x="8.5" y="15" width="15" height="5" rx="2.5" fill="var(--accent-lit)"></rect>
+        <rect x="12" y="8" width="8" height="5" rx="2.5" fill="var(--accent-lit)" opacity=".72"></rect>
+      </svg>
+      Cairn
+    </a>
+    <a class="nav-link" href="app/">Open it →</a>
+  </div>
+</nav>
+
+<header class="hero" id="top">
+  <div class="wrap hero-grid">
+    <div>
+      <p class="eyebrow">Free · in your browser · no account</p>
+      <h1>I kept planning my week in ChatGPT. By Thursday it had forgotten all of it.</h1>
+      <p class="lede">So I built the thing that remembers. Cairn holds your habits and your deadlines in one place, works out which one is quietly failing, and tells you what to change about it.</p>
+
+      <div class="cta-row">
+        <a class="cta" href="app/">Open it</a>
+        <a class="cta ghost" href="survey/">Six questions instead →</a>
+      </div>
+      <p class="small-print">Runs in the browser, installs to your phone or your dock, works offline. Nothing leaves your device unless you export it.</p>
+    </div>
+
+    <div>
+      <div class="brief">
+        <div class="brief-bar">
+          <span class="dot"></span><span class="dot"></span><span class="dot"></span>
+          <span class="brief-title">Monday · 07:40</span>
+        </div>
+        <div class="brief-body">
+          <p class="brief-lead"><strong>Four things today.</strong> One's carried over from Friday, and your programming block has slipped three Thursdays in a row.</p>
+
+          <div class="line"><span class="tick on"></span><span class="what">Sleep cycle fix</span><span class="when">11 days</span></div>
+          <div class="line"><span class="tick"></span><span class="what">Programming — 1h15</span><span class="when">every day</span></div>
+          <div class="line"><span class="tick"></span><span class="what">Studying</span><span class="when">0 / 8</span></div>
+          <div class="line"><span class="tick"></span><span class="what">Send the ELL305 report draft</span><span class="when late">2 days late</span></div>
+
+          <div class="brief-note">
+            <span class="mono">One thing to change</span>
+            Programming keeps dying on Thursdays, and it's still felt manual for a month, so you're spending willpower on it every time. Try hooking it to closing your laptop instead of to 9pm, and cut it to 40 minutes until it stops needing a decision.
+          </div>
+        </div>
+      </div>
+      <p class="mock-tag">Example — not real data</p>
+    </div>
+  </div>
+</header>
+
+<section id="why">
+  <div class="wrap">
+    <p class="eyebrow">The obvious question</p>
+    <h2>Why not just use ChatGPT for this?</h2>
+    <p class="lede">You can. I did, for months, and it kind of works — that's actually why I started building this. But there are three things a chat window can't do, and they turn out to be most of the job.</p>
+
+    <div class="three">
+      <div>
+        <span class="n">01</span>
+        <h3>It doesn't forget</h3>
+        <p>Not a summary of what you told it. An actual record — every day you logged, every deadline, every time you changed your mind about something. Still there in six months, still searchable.</p>
+      </div>
+      <div>
+        <span class="n">02</span>
+        <h3>It turns up on its own</h3>
+        <p>The brief is there at 07:40 whether or not you opened anything. A chat window only ever answers you. Turning up without being asked is most of what a secretary actually does.</p>
+      </div>
+      <div>
+        <span class="n">03</span>
+        <h3>It remembers what you promised</h3>
+        <p>It knows what you said you'd change last Sunday and whether you did. Not to tell you off — to work out which bit of the plan was wrong, so you can fix that instead of trying harder.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section id="day">
+  <div class="wrap">
+    <p class="eyebrow">The day</p>
+    <h2>Four moments, then it leaves you alone</h2>
+    <p class="lede">I didn't want another thing to maintain. Under three minutes a day is the whole design target.</p>
+
+    <div class="steps">
+      <div class="step"><span class="n">01</span>
+        <div><h3>Morning</h3><p>What's on, what's late, and what you said last week you'd change.</p></div>
+      </div>
+      <div class="step"><span class="n">02</span>
+        <div><h3>Just type it</h3><p>“report due thursday”, or “read every day after dinner”. It works out which one's a task and which one's a habit, and fills in the rest.</p></div>
+      </div>
+      <div class="step"><span class="n">03</span>
+        <div><h3>Evening</h3><p>What actually happened. Anything left over moves to another day instead of rotting at the bottom of a list.</p></div>
+      </div>
+      <div class="step"><span class="n">04</span>
+        <div><h3>Sunday</h3><p>One thing to change, and why. A different cue, a smaller version, a better day. Not a pep talk.</p></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section id="wont">
+  <div class="wrap">
+    <p class="eyebrow">On purpose</p>
+    <h2>Things I've decided it won't do</h2>
+    <p class="lede">A lot of apps here run on tricks that get you opening them more and feeling worse. I've written these into the repo so you can hold me to them.</p>
+
+    <ul class="refuse">
+      <li><b>It won't reset your streak.</b> Missing one day doesn't actually set you back — that's in the research. Every app resets you anyway, because losing a number makes you open the app. You get one repair a week instead.</li>
+      <li><b>No random rewards.</b> Unpredictable rewards are what slot machines run on. It would work. I'm not doing it.</li>
+      <li><b>No fake urgency, no guilt notifications</b>, and nothing that pings you about something you've already done.</li>
+      <li><b>No leaderboards, no sharing your streak.</b> Your Thursdays aren't failing because of other people.</li>
+      <li><b>You can leave whenever.</b> Everything exports to plain JSON and imports straight back, and the same file works in the Mac app.</li>
+    </ul>
+  </div>
+</section>
+
+<section id="where">
+  <div class="wrap">
+    <p class="eyebrow">Where it actually is</p>
+    <h2>Half of it works. Half of it is why I'm asking.</h2>
+    <p class="lede">The boring hard part is built — the record, the maths, the offline bit. What I don't know is whether it's worth doing the rest.</p>
+
+    <div class="split">
+      <div class="live">
+        <span class="mono">Works right now</span>
+        <ul>
+          <li>Habits, tasks and deadlines in one place</li>
+          <li>Tells you whether a habit is actually becoming automatic, not just whether you ticked it</li>
+          <li>Names the weekday your habit keeps dying on</li>
+          <li>Type in plain English and it sorts itself out</li>
+          <li>Works offline, installs to your phone or dock</li>
+          <li>Free Mac app too, same file</li>
+        </ul>
+      </div>
+      <div class="soon">
+        <span class="mono">Still to build</span>
+        <ul>
+          <li>Accounts, so it syncs between your devices</li>
+          <li>Reminders that reach you when the app isn't open</li>
+          <li>The Sunday suggestion written properly, instead of from rules</li>
+          <li>Calendar, so the plan knows what your day already has in it</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section id="ask">
+  <div class="wrap">
+    <p class="eyebrow">This bit is the actual point</p>
+    <h2>Is this just me?</h2>
+
+    <div class="ask">
+      <p class="lede" style="margin-top:0">I've been building this on weekends. Before I spend my whole winter on it, I'd like to know whether anyone else has this problem or whether it's just me.</p>
+      <p style="margin-top:1.1rem">If you run your life out of Notion, or a notes app, or a folder of markdown, or a chat window — and it keeps quietly falling apart every few months — that's the thing I'm trying to fix. I'd really like to hear how yours falls apart.</p>
+      <p style="margin-top:1.1rem">Six questions, about two minutes. Or leave your email and I'll write once, when there's something worth trying. Or just tell me it's a bad idea — that's useful too, and I'd rather hear it now than in March.</p>
+
+      <div class="cta-row">
+        <a class="cta" href="survey/">Answer the six questions</a>
+        <a class="cta ghost" href="app/">Or just go and use it</a>
+      </div>
+
+      <form class="signup" id="reserve-form">
+        <div class="field-row">
+          <input type="email" name="email" required placeholder="you@email.com" aria-label="Email address">
+          <button type="submit">Keep me posted</button>
+        </div>
+        <input type="text" name="would_pay"
+               placeholder="What would you pay a month for it? (or nothing — say so)"
+               aria-label="What would you pay a month">
+        <input type="text" name="current_system" placeholder="What do you use to run your life now? (optional)" aria-label="What do you use now">
+        <p class="small-print">No card, no launch sequence. One email, when there's a real thing to try. I'm not picking a price yet, which is why I'm asking rather than telling.</p>
+        <p class="status" id="status" role="status"></p>
+      </form>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <div class="wrap foot-in">
+    <span>Cairn</span>
+    <span>Free, and it stays that way. Your data never leaves your device.</span>
+  </div>
+</footer>
+
+<script>
+const FORM_ENDPOINT = "https://formspree.io/f/mbgjzrdd";
+const FALLBACK_EMAIL = "goyalnaman.work@gmail.com";
+
+function wire(formId, statusId) {
+  const form = document.getElementById(formId);
+  const status = document.getElementById(statusId);
+  if (!form) return;
+
+  form.addEventListener("submit", async (event) => {
+    event.preventDefault();
+    const data = new FormData(form);
+    const email = (data.get("email") || "").toString().trim();
+
+    const say = (message, isError) => {
+      status.textContent = message;
+      status.classList.toggle("err", !!isError);
+      status.classList.add("show");
+    };
+
+    if (!FORM_ENDPOINT) {
+      const body = encodeURIComponent(
+        "Email: " + email +
+        "\nWould pay: " + data.get("would_pay") +
+        "\nCurrently uses: " + data.get("current_system"));
+      window.location.href = "mailto:" + FALLBACK_EMAIL +
+        "?subject=" + encodeURIComponent("Cairn") + "&body=" + body;
+      say("Opening your email app — the form isn't connected yet.");
+      return;
+    }
+
+    try {
+      const response = await fetch(FORM_ENDPOINT, {
+        method: "POST", headers: { Accept: "application/json" }, body: data,
+      });
+      if (!response.ok) throw new Error(String(response.status));
+      form.reset();
+      say("Got it. I'll write once, when there's something real to try.");
+    } catch {
+      say("That didn't send. Email " + FALLBACK_EMAIL + " instead and I'll add you by hand.", true);
+    }
+  });
+}
+
+wire("reserve-form", "status");
+</script>
+</body>
+</html>
