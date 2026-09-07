@@ -415,5 +415,18 @@ function wire(formId, statusId) {
 
 wire("reserve-form", "status");
 </script>
+<script>
+// Page analytics. Loads only once a real beacon token is set, so the site
+// isn't shipping a dead script tag in the meantime.
+(function () {
+  var token = "REPLACE_WITH_CLOUDFLARE_TOKEN";
+  if (token.indexOf("REPLACE_") === 0) return;
+  var s = document.createElement("script");
+  s.defer = true;
+  s.src = "https://static.cloudflareinsights.com/beacon.min.js";
+  s.setAttribute("data-cf-beacon", JSON.stringify({ token: token }));
+  document.head.appendChild(s);
+})();
+</script>
 </body>
 </html>
