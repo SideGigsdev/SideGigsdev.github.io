@@ -96,7 +96,7 @@
 // straight there. Left empty, the last step offers a copyable summary and an
 // email fallback, so the survey is never a dead end.
 const FORM_ENDPOINT = "https://formspree.io/f/mbgjzrdd";
-const FALLBACK_EMAIL = "goyalnaman.work@gmail.com";
+
 
 const QUESTIONS = [
   {
@@ -264,13 +264,6 @@ async function submit() {
       </div></div>`;
   };
 
-  if (!FORM_ENDPOINT) {
-    const mailto = `mailto:${FALLBACK_EMAIL}?subject=${encodeURIComponent("Cairn survey")}&body=${encodeURIComponent(summary)}`;
-    finish("The form isn't hooked up yet, so this last bit is manual. Sorry.",
-      `<p><a href="${mailto}">Send these answers by email</a>, or paste them anywhere you like:</p>
-       <textarea readonly style="margin-top:.6rem">${esc(summary)}</textarea>`);
-    return;
-  }
 
   try {
     const body = new FormData();
@@ -280,7 +273,6 @@ async function submit() {
     if (!response.ok) throw new Error(String(response.status));
     finish("That's exactly what I needed. If you left an email I'll write once, when there's something real to try.");
   } catch {
-    const mailto = `mailto:${FALLBACK_EMAIL}?subject=${encodeURIComponent("Cairn survey")}&body=${encodeURIComponent(summary)}`;
     finish("That didn't send, and that's my fault not yours.",
       `<p><a href="${mailto}">Send it by email instead</a> and I'll add it by hand.</p>`);
   }

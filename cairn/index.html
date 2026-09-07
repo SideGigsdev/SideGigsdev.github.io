@@ -382,7 +382,7 @@
 
 <script>
 const FORM_ENDPOINT = "https://formspree.io/f/mbgjzrdd";
-const FALLBACK_EMAIL = "goyalnaman.work@gmail.com";
+
 
 function wire(formId, statusId) {
   const form = document.getElementById(formId);
@@ -400,17 +400,6 @@ function wire(formId, statusId) {
       status.classList.add("show");
     };
 
-    if (!FORM_ENDPOINT) {
-      const body = encodeURIComponent(
-        "Email: " + email +
-        "\nWould pay: " + data.get("would_pay") +
-        "\nCurrently uses: " + data.get("current_system"));
-      window.location.href = "mailto:" + FALLBACK_EMAIL +
-        "?subject=" + encodeURIComponent("Cairn") + "&body=" + body;
-      say("Opening your email app — the form isn't connected yet.");
-      return;
-    }
-
     try {
       const response = await fetch(FORM_ENDPOINT, {
         method: "POST", headers: { Accept: "application/json" }, body: data,
@@ -419,7 +408,7 @@ function wire(formId, statusId) {
       form.reset();
       say("Got it. I'll write once, when there's something real to try.");
     } catch {
-      say("That didn't send. Email " + FALLBACK_EMAIL + " instead and I'll add you by hand.", true);
+      say("That didn't send — something on my end. Try again in a moment?", true);
     }
   });
 }
